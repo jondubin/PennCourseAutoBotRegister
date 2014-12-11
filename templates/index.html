@@ -1,0 +1,24 @@
+{% extends "bootstrap/base.html" %}
+{% block title %}PennCourseAutoRegisterBot{% endblock %}
+
+
+{% block scripts %}
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='coursestatus.js') }}"></script>
+{% endblock %}
+
+
+{% block content %}
+<div class="container">
+    <h1>PennCourseAutoRegisterBot</h1>
+
+    <h3>Check if a course is open</h3>
+    <p>Use the form below to check if a course is open:</p>
+    <input id="courseSearch"> </input>
+    <!-- <form class="form form-horizontal" method="post" role="form">
+
+    </form> -->
+</div>
+
+
+{% endblock %}
