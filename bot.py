@@ -2,6 +2,7 @@ from flask import Flask, render_template, request
 from flask_bootstrap import Bootstrap
 import requests
 import json
+import re
 
 from ghost import Ghost
 ghost = Ghost()
@@ -53,18 +54,72 @@ def get_courses_for_dept(dept):
     for page in range(1, number_of_pages + 1):
         api_return = get_dept_for_page_number(dept, page)
         for course in api_return["result_data"]:
-            course_title = course["course_title"]
+            title = course["course_title"]
+            # course_number = course["course_number"]
             instructor_block = course["instructors"]
             activity = course["activity"]
-            #print json.dumps(instructor_block)
-            #course_instructor = instructor_block["name"]
-            #section_id = instructor_block["section_id"]
-            print course_title
-            print activity
-            #print course_instructor
-            #print section_id
-            #print json.dumps(course)
-            #return json.dumps(api_return)
+            if activity == "LEC":
+                activity = "Lecture"
+            elif activity == "REC":
+                activity = "Recitation"
+            elif activity == "LAB":
+                activity = "Laboratory"
+            elif activity == "IND":
+                activity = "Indepdent Study"
+            elif activity == "SEM":
+                activity = "Seminar"
+            elif activity == "SRT":
+                activity = "Senior Thesis"
+            elif activity == "STU":
+                activity = "Studio"
+            elif activity == "CLN":
+                activity = "CLINIC"
+            elif activity == "PRC":
+                activity = "SCUE Preceptorial"
+            elif activity == "PRO":
+                activity = "NSO Proseminar"
+            recitations = course["recitations"]
+            labs = course["labs"]
+            # print json.dumps(instructor_block)
+            try:
+                if recitations:
+                    for recitation in recitations:
+                        course_id = recitation["course_id"]
+                        section_id = recitation["section_id"]
+                        subject = recitation["subject"]
+                        course_section_id = subject + course_id + section_id
+                        add_course_to_json(dept, title, "Recitation",
+                                           course_section_id)
+                if labs:
+                    for lab in labs:
+                        course_id = lab["course_id"]
+                        section_id = lab["section_id"]
+                        subject = lab["subject"]
+                        course_section_id = subject + course_id + section_id
+                        add_course_to_json(dept, title, "Laboratory",
+                                           course_section_id)
+                instructor = instructor_block[0]["name"]
+                course_section_id = instructor_block[0]["section_id"]
+                add_course_to_json(dept, title, activity,
+                                   course_section_id, instructor)
+            except:
+                pass
+
+
+def add_course_to_json(dept, title, activity, full_id, instructor=""):
+    m = re.search("\d", full_id)
+    n = m.start()  # first number position
+    section_dept = full_id[0:n]
+    course_id = full_id[n:n+3]
+    section_id = full_id[n+3:n+6]
+    full_id = "{} {} {}".format(section_dept, course_id, section_id)
+    print dept
+    if instructor:
+        print instructor
+    print title
+    print activity
+    print full_id
+    print "=================="
 
 
 # one-time function to create courses json file
