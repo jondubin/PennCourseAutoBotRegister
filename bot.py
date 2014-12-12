@@ -1,15 +1,16 @@
 from flask import Flask, render_template, request
-from flask_bootstrap import Bootstrap
 import requests
 import json
+import time
 import re
+from bs4 import BeautifulSoup
 
 from ghost import Ghost
-ghost = Ghost()
+ghost = Ghost(wait_timeout=25, display=True)
+
 
 app = Flask(__name__)
 app.config.from_object('config')
-Bootstrap(app)
 
 AUTH_TOKEN = app.config["AUTH_TOKEN"]
 AUTH_BEARER = app.config["AUTH_BEARER"]
@@ -49,13 +50,12 @@ def get_dept_for_page_number(dept, page_number):
     return api_return
 
 
-def get_courses_for_dept(dept):
+def get_courses_for_dept(json_obj, dept):
     number_of_pages = get_page_numbers_for_dept(dept)
     for page in range(1, number_of_pages + 1):
         api_return = get_dept_for_page_number(dept, page)
         for course in api_return["result_data"]:
             title = course["course_title"]
-            # course_number = course["course_number"]
             instructor_block = course["instructors"]
             activity = course["activity"]
             if activity == "LEC":
@@ -80,7 +80,6 @@ def get_courses_for_dept(dept):
                 activity = "NSO Proseminar"
             recitations = course["recitations"]
             labs = course["labs"]
-            # print json.dumps(instructor_block)
             try:
                 if recitations:
                     for recitation in recitations:
@@ -88,7 +87,7 @@ def get_courses_for_dept(dept):
                         section_id = recitation["section_id"]
                         subject = recitation["subject"]
                         course_section_id = subject + course_id + section_id
-                        add_course_to_json(dept, title, "Recitation",
+                        add_course_to_json(json_obj, dept, title, "Recitation",
                                            course_section_id)
                 if labs:
                     for lab in labs:
@@ -96,41 +95,43 @@ def get_courses_for_dept(dept):
                         section_id = lab["section_id"]
                         subject = lab["subject"]
                         course_section_id = subject + course_id + section_id
-                        add_course_to_json(dept, title, "Laboratory",
+                        add_course_to_json(json_obj, dept, title, "Laboratory",
                                            course_section_id)
                 instructor = instructor_block[0]["name"]
                 course_section_id = instructor_block[0]["section_id"]
-                add_course_to_json(dept, title, activity,
+                add_course_to_json(json_obj, dept, title, activity,
                                    course_section_id, instructor)
             except:
                 pass
 
 
-def add_course_to_json(dept, title, activity, full_id, instructor=""):
+def add_course_to_json(obj, dept, title, activity, full_id, instructor=""):
+    full_id = full_id.replace(" ", "")
     m = re.search("\d", full_id)
     n = m.start()  # first number position
     section_dept = full_id[0:n]
     course_id = full_id[n:n+3]
     section_id = full_id[n+3:n+6]
-    full_id = "{} {} {}".format(section_dept, course_id, section_id)
-    print dept
-    if instructor:
-        print instructor
-    print title
-    print activity
-    print full_id
-    print "=================="
+    final_id = "{} {} {}".format(section_dept, course_id, section_id)
+    #  dict_obj = {"label": final_id, "value": full_id}
+    obj.append(final_id)
+    # print dept
+    # if instructor:
+    #     print instructor
+    # print title
+    # print activity
+    # print full_id
+    # print "=================="
 
 
 # one-time function to create courses json file
 def create_courses_json():
-    courses = open('static/courses.json', 'w')
+    json_obj = []
     departments = get_departments_list()
-    # for dept in departments:
-    #     dept_courses = get_courses_for_dept(dept)
-    #     print dept_courses
-    return get_courses_for_dept("MATH")
-    courses.close
+    for dept in departments:
+        get_courses_for_dept(json_obj, dept)
+    with open("static/courses.json", "w") as outfile:
+        json.dump(list(set(json_obj)), outfile, indent=4)
 
 
 @app.route('/closed_status', methods=['GET'])
@@ -151,6 +152,82 @@ def get_closed_status():
         return ""
 
 
+@app.route('/signup', methods=['POST'])
+def sign_up_for_class():
+    return "yo"
+
+
+def intouch_signup(username, password, subject, course, section):
+    ghost.open('https://pennintouch.apps.upenn.edu/pennInTouch/jsp/fast.do')
+    ghost.wait_for_selector('#password')
+    ghost.set_field_value('#password', password)
+    ghost.set_field_value('#pennkey', username)
+    ghost.fire_on("form", "submit", expect_loading=True)
+    ghost.wait_for_selector('.fastMenuLevel2')
+    html_content = ghost.content
+    js_function = find_register_function(html_content)
+    ghost.evaluate(js_function, expect_loading=True)
+    ghost.wait_for_page_loaded()
+    registration_content = ghost.content
+    subject_id = find_subject_id(registration_content, 0)
+    course_id = find_subject_id(registration_content, 1)
+    section_id = find_subject_id(registration_content, 2)
+
+    set_dropdown(subject_id, subject)
+    on_change = "fastElementChange(event, null, null, 'courseEnrollmentForm', false, null, 'subjectPrimary', 'onchange', false, true, this);"
+    on_course_change = "fastElementChange(event, null, null, 'courseEnrollmentForm', false, null, 'courseNumberPrimary', 'onchange', false, true, this);"
+    ghost.evaluate(on_change)
+    process_ghost()
+    set_dropdown(course_id, course)
+    ghost.evaluate(on_course_change)
+    process_ghost()
+    set_dropdown(section_id, section)
+    process_ghost()
+    ghost.wait_for_text("Add request")
+    request_function = find_request_function(ghost.content)
+    print request_function
+    ghost.evaluate(request_function)
+    ghost.capture_to('static/registration_complete.png')
+
+
+def find_request_function(html_content):
+    soup = BeautifulSoup(html_content)
+    add_request = soup.findAll(text=re.compile('Add request'), limit=1)[0]
+    request_function = add_request.parent.parent['onclick'][7:]
+    return request_function
+
+
+def find_register_function(html_content):
+    soup = BeautifulSoup(html_content)
+    element = soup.body.ul.li.ul.contents[7].a
+    js_function = element['onclick'][7:]  # remove "return" from string
+    return js_function
+
+
+def find_subject_id(html_content, select_idx):
+    soup = BeautifulSoup(html_content)
+    select = soup.find_all('select')
+    return select[select_idx]['id']
+
+
+def set_dropdown(dropdown_id, value):
+    subject_selector = (("document.getElementById('{}').value = '{}'")
+                        .format(dropdown_id, value))
+    print subject_selector
+    ghost.evaluate(subject_selector)
+
+
+def process_ghost():
+    ghost._app.processEvents()
+    time.sleep(1)
+    ghost._app.processEvents()
+    time.sleep(1)
+    ghost._app.processEvents()
+    time.sleep(1)
+    ghost._app.processEvents()
+    time.sleep(1)
+
+
 @app.route('/')
 def index():
     # form =
@@ -162,15 +239,3 @@ def index():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-# ghost.open('https://pennintouch.apps.upenn.edu/pennInTouch/jsp/fast.do')
-# ghost.set_field_value('#password', '6174Kaprekar')
-# ghost.set_field_value('#pennkey', 'dubinj')
-
-# ghost.fire_on("form", "submit", expect_loading=True)
-# ghost.click(".fastMenuLevel2Ul:first a:eq(3)")
-# ghost.capture_to('header.png')
-
-
-# class MyTest(GhostTestCase):
-#      display = True

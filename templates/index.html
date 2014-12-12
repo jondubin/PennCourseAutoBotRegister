@@ -1,24 +1,74 @@
-{% extends "bootstrap/base.html" %}
-{% block title %}PennCourseAutoRegisterBot{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <!-- Basic Page Needs
+        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+        <meta charset="utf-8">
+        <title>PennCourseAutoRegisterBot</title>
+        <meta name="description" content="">
+        <meta name="author" content="">
 
+        <!-- Mobile Specific Metas
+        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+        <meta name="viewport" content="width=device-width, initial-scale=1">
 
-{% block scripts %}
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-<script type="text/javascript" src="{{ url_for('static', filename='coursestatus.js') }}"></script>
-{% endblock %}
+        <!-- FONT
+        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+        <link href='//fonts.googleapis.com/css?family=Raleway:400,300,600' rel='stylesheet' type='text/css'>
 
+        <!-- CSS
+        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 
-{% block content %}
-<div class="container">
-    <h1>PennCourseAutoRegisterBot</h1>
+        <link rel="stylesheet" href="{{ url_for('static', filename="css/normalize.css") }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename="css/skeleton.css") }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename="css/main.css") }}">
+        <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/themes/smoothness/jquery-ui.css" />
+        <style type="text/css">
+         .centre
+         {
+             width: 200px;
+             display: block;
+             margin-left: auto;
+             margin-right: auto;
+         }
+         h1, h2, h4, p, h5, span {
+             text-align: center;
+         }
+        </style>
 
-    <h3>Check if a course is open</h3>
-    <p>Use the form below to check if a course is open:</p>
-    <input id="courseSearch"> </input>
-    <!-- <form class="form form-horizontal" method="post" role="form">
+        <!-- Scripts
+        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 
-    </form> -->
-</div>
+        <!-- Favicon
+        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+        <!-- <link rel="icon" type="image/png" href="../../dist/images/favicon.png"> -->
+    </head>
 
+    <body id="body">
 
-{% endblock %}
+        <div class="container">
+            <h2>AutoRegisterBot</h2>
+            <h5>Check if a course is open</h5>
+            <!-- <p>Use the form below to check if a course is open:</p> -->
+            <input class="typeahead centre" id="courseSearch" type="text" placeholder="Enter your class">
+
+            <div id="submitForm">
+                <p><strong id="status"></strong></p>
+                <p id="explanation"></p>
+                <form>
+                    <input id="email" class="centre" type="email" placeholder="Enter your email">
+                    <input type="text" placeholder="Enter your PennKey" class="centre">
+                    <input type="password" placeholder="Enter your password" class="centre">
+                    <button id="submit" class="centre" action="/signup" method="Post">Register</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- <script src="http://twitter.github.com/hogan.js/builds/3.0.1/hogan-3.0.1.js"></script> -->
+        <script type="text/javascript" src="{{ url_for('static', filename='js/coursestatus.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/typeahead.bundle.js') }}"></script>
+        <script type="text/javascript" src="{{ url_for('static', filename='js/typeahead.js') }}"></script>
+    </body>
+</html>
