@@ -41,26 +41,23 @@
         <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.2/jquery-ui.min.js"></script>
 
+        <!-- Favicon
+        –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+        <!-- <link rel="icon" type="image/png" href="../../dist/images/favicon.png"> -->
     </head>
 
     <body id="body">
 
         <div class="container">
             <h2>AutoRegisterBot</h2>
-            <h5>Check if a course is open</h5>
+            <h5>We got your request, here's a pic of what happened:</h5>
 
-            <div id="submitForm">
-                <form action="/signup" method="Post">
-                    <input required name="course" class="typeahead centre" id="courseSearch" type="text" placeholder="Enter your class">
-                    <p><strong id="status"></strong></p>
-                    <p id="explanation"></p>
-                    <input required class="centre hide" name="pennKey" type="text" placeholder="Enter your PennKey" class="centre">
-                    <input required name="password" type="password" class="centre hide" placeholder="Enter your password" class="centre">
-                    <button id="submit" class="centre hide">Register</button>
-                </form>
-            </div>
+            <img class="centre" src="static/registration_complete.png"  style="width:600px;">
+
+
         </div>
 
+        <!-- <script src="http://twitter.github.com/hogan.js/builds/3.0.1/hogan-3.0.1.js"></script> -->
         <script type="text/javascript" src="{{ url_for('static', filename='js/coursestatus.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/typeahead.bundle.js') }}"></script>
         <script type="text/javascript" src="{{ url_for('static', filename='js/typeahead.js') }}"></script>
